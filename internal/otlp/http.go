@@ -119,7 +119,7 @@ func (rc *Receiver) readBody(r *http.Request) ([]byte, int, error) {
 		if err != nil {
 			return nil, http.StatusBadRequest, fmt.Errorf("invalid gzip body: %w", err)
 		}
-		defer gz.Close()
+		defer func() { _ = gz.Close() }()
 		reader = gz
 	default:
 		return nil, http.StatusUnsupportedMediaType, fmt.Errorf("unsupported content encoding %q", enc)
@@ -239,7 +239,7 @@ func (c *Client) do(ctx context.Context, hc *http.Client, payload []byte) (*colm
 	if err != nil {
 		return nil, true, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, err := io.ReadAll(io.LimitReader(resp.Body, DefaultMaxBodyBytes))
 	if err != nil {
 		return nil, true, err

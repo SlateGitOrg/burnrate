@@ -294,19 +294,19 @@ func TestReceiverProtobufGzipAndJSON(t *testing.T) {
 	pb, _ := proto.Marshal(req)
 
 	resp := post(t, srv.URL, "application/x-protobuf", "", pb)
-	resp.Body.Close()
-	if resp.StatusCode != 200 || resp.Header.Get("Content-Type") != ContentTypeProtobuf {
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusOK || resp.Header.Get("Content-Type") != ContentTypeProtobuf {
 		t.Fatalf("protobuf: %d %s", resp.StatusCode, resp.Header.Get("Content-Type"))
 	}
 	resp = post(t, srv.URL, "application/x-protobuf", "gzip", gz(t, pb))
-	resp.Body.Close()
-	if resp.StatusCode != 200 {
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("gzip: %d", resp.StatusCode)
 	}
 	js, _ := protojson.Marshal(req)
 	resp = post(t, srv.URL, "application/json; charset=utf-8", "", js)
-	resp.Body.Close()
-	if resp.StatusCode != 200 || resp.Header.Get("Content-Type") != ContentTypeJSON {
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusOK || resp.Header.Get("Content-Type") != ContentTypeJSON {
 		t.Fatalf("json: %d", resp.StatusCode)
 	}
 	if len(col.samples) != 3 || rc.Stats.PointsAccepted.Load() != 3 || rc.Stats.Requests.Load() != 3 {
@@ -320,7 +320,7 @@ func TestReceiverPartialSuccess(t *testing.T) {
 	bad.TimeUnixNano = 0
 	pb, _ := proto.Marshal(request(counter("reqs", "1", cumulative, true, intPoint(1), bad)))
 	resp := post(t, srv.URL, ContentTypeProtobuf, "", pb)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	var body bytes.Buffer
 	if _, err := body.ReadFrom(resp.Body); err != nil {
 		t.Fatal(err)
@@ -329,7 +329,7 @@ func TestReceiverPartialSuccess(t *testing.T) {
 	if err := proto.Unmarshal(body.Bytes(), out); err != nil {
 		t.Fatal(err)
 	}
-	if resp.StatusCode != 200 || out.GetPartialSuccess().GetRejectedDataPoints() != 1 || !strings.Contains(out.GetPartialSuccess().GetErrorMessage(), "timestamp") {
+	if resp.StatusCode != http.StatusOK || out.GetPartialSuccess().GetRejectedDataPoints() != 1 || !strings.Contains(out.GetPartialSuccess().GetErrorMessage(), "timestamp") {
 		t.Fatalf("partial success %v", out)
 	}
 	if rc.Stats.PointsRejected.Load() != 1 {
@@ -357,7 +357,7 @@ func TestReceiverErrors(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			resp := post(t, srv.URL, c.ct, c.enc, c.body)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			if resp.StatusCode != c.status {
 				t.Fatalf("status %d, want %d", resp.StatusCode, c.status)
 			}
@@ -367,7 +367,7 @@ func TestReceiverErrors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode != http.StatusMethodNotAllowed || resp.Header.Get("Allow") != "POST" {
 		t.Fatalf("GET: %d", resp.StatusCode)
 	}

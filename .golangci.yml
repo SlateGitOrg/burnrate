@@ -20,6 +20,13 @@ linters:
     - unused
     - usestdlibvars
   settings:
+    errcheck:
+      # Report/table writers go through fmt into a tabwriter or a buffer whose
+      # Flush/Write error is checked; per-call Fprintf results add no signal.
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
     govet:
       enable-all: true
       disable:

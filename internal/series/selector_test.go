@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/prometheus/prometheus/model/labels"
+	"github.com/prometheus/common/model"
 	promparser "github.com/prometheus/prometheus/promql/parser"
 )
 
@@ -199,7 +199,7 @@ func assertSameAsPrometheus(t *testing.T, ours Selector) {
 	}
 	got := map[string]string{}
 	for _, m := range theirs {
-		if m.Name == labels.MetricName {
+		if m.Name == model.MetricNameLabel {
 			if m.Value != ours.Metric {
 				t.Fatalf("metric %q vs %q", m.Value, ours.Metric)
 			}
