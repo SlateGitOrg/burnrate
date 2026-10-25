@@ -1,9 +1,11 @@
 package slo
 
 import (
+	"fmt"
 	"math"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/archit2501/burnrate/internal/burnmath"
@@ -155,3 +157,53 @@ func (p Policy) Evaluate(remaining float64) (state, action string) {
 	return StateExhausted, p.ExhaustedAction
 }
 
+// SeriesLabels are the labels attached to every series generated for the SLO:
+// slo, service and the SLO's metadata labels.
+func (s *SLO) SeriesLabels() map[string]string {
+	out := make(map[string]string, len(s.Labels)+2)
+	for k, v := range s.Labels {
+		out[k] = v
+	}
+	out["slo"] = s.Name
+	out["service"] = s.Service
+	return out
+}
+
+// AlertLabels are the labels of the alert for one severity, excluding
+// alertname: the series labels, the alerting labels and severity.
+func (s *SLO) AlertLabels(severity string) map[string]string {
+	out := s.SeriesLabels()
+	for k, v := range s.Alerting.Labels {
+		out[k] = v
+	}
+	out["severity"] = severity
+	return out
+}
+
+// AlertAnnotations are the static annotations of the alert for one severity.
+// Both the engine and the generated Prometheus rules use them, so a page
+// reads the same whichever system raised it.
+func (s *SLO) AlertAnnotations(sev Severity) map[string]string {
+	out := map[string]string{
+		"summary": fmt.Sprintf("%s is burning its error budget too fast (%s)", s.DisplayName, sev.Name),
+		"description": fmt.Sprintf("SLO %s of service %s (objective %s over %s) exceeds the %s burn-rate thresholds: %s.",
+			s.Name, s.Service, FormatPercent(s.Objective), FormatDuration(s.Period), sev.Name, describeWindows(sev.Windows)),
+	}
+	for k, v := range s.Alerting.Annotations {
+		out[k] = v
+	}
+	return out
+}
+
+func describeWindows(ws []Window) string {
+	parts := make([]string, len(ws))
+	for i, w := range ws {
+		parts[i] = fmt.Sprintf("%s/%s at %sx", FormatDuration(w.Long), FormatDuration(w.Short), strconv.FormatFloat(w.BurnRate, 'g', 4, 64))
+	}
+	return strings.Join(parts, " or ")
+}
+
+// FormatPercent renders an objective such as 0.999 as "99.9%".
+func FormatPercent(v float64) string {
+	return strconv.FormatFloat(v*100, 'g', 10, 64) + "%"
+}

@@ -190,8 +190,8 @@ func TestLatencyValidation(t *testing.T) {
 		`{histogram: 'h{job="a", le="1"}', threshold: 0.3}`: "do not match on le",
 		`{histogram: 'h{job="a"}', threshold: 0}`:           "positive bucket bound",
 		`{histogram: 'h{job="a"}', threshold: .inf}`:        "positive bucket bound",
-		`{threshold: 1}`:                                    "histogram is required",
-		`{histogram: 'h{', threshold: 1}`:                   "indicator.latency.histogram",
+		`{threshold: 1}`:                  "histogram is required",
+		`{histogram: 'h{', threshold: 1}`: "indicator.latency.histogram",
 	}
 	for lat, want := range cases {
 		doc := strings.Replace(base, "LAT", lat, 1)
@@ -340,4 +340,3 @@ func TestDurations(t *testing.T) {
 		t.Fatalf("MarshalText = %s", b)
 	}
 }
-
