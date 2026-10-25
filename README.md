@@ -223,7 +223,7 @@ Every number in this README comes from a command in the repo:
 | Every scenario fires exactly its expected alerts | `go test ./internal/sim -run EndToEnd -v` | 8/8 |
 | Full pipeline throughput | `make bench` | 4-day `incident-day` replay (368,608 samples, 5,760 evaluation steps × 3 SLOs, incl. protobuf encode/decode): ~0.7 s/op on an Apple M1 Pro |
 | 30-day window sum (43,200 one-minute buckets) | `make bench` | ~1 µs (`BenchmarkSum30d`); bucket add ~10 ns |
-| Source size | `git ls-files '*.go' \| grep -v _test.go \| xargs wc -l` | 5,194 lines of non-test Go; 3,634 lines of tests |
+| Source size | `git ls-files '*.go' \| grep -v _test.go \| xargs wc -l` | 5,245 lines of non-test Go; 3,749 lines of tests |
 
 The test suite takes about a minute; most of it is the Prometheus equivalence
 test, which replays days of traffic through a real TSDB.
