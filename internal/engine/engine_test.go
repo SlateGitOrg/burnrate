@@ -375,3 +375,118 @@ func TestMultipleSLOsShareSeries(t *testing.T) {
 		}
 	}
 }
+
+// TestEvictedSeriesReturnsAsBaseline is the regression test for a series that
+// is evicted by SeriesTTL while its producer stays alive (an OpenTelemetry
+// asynchronous instrument whose callback stops observing an attribute set),
+// then reappears with the same start time. Its value is the stream's whole
+// lifetime count, not new events: it must re-establish a baseline, as rate()
+// would, instead of paging. Both first-value rules are covered: a stream that
+// started before the engine began observing (its first 5000 is a baseline),
+// and one that started after (its first 5000 counts once, legitimately).
+func TestEvictedSeriesReturnsAsBaseline(t *testing.T) {
+	cases := []struct {
+		name  string
+		start time.Time
+	}{
+		{"stream started before observation", tBegin.Add(-day)},
+		{"stream started after observation began", tBegin.Add(30 * time.Second)},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			e := newEngine(t, Config{}, workbookSLO)
+			// Another process is the first thing the engine sees, so the
+			// second case's stream genuinely starts after the epoch.
+			e.Ingest([]Sample{{Metric: "reqs_total", Labels: lbls("job", "api", "code", "200", "instance", "b"), Value: 1, Time: tBegin, Start: tBegin.Add(-day), Producer: "b"}})
+			var events []Event
+			good := 0.0
+			step := func(m int, withErrors bool) {
+				good += 1000
+				s := []Sample{{Metric: "reqs_total", Labels: lbls("job", "api", "code", "200"), Value: good, Time: at(m), Start: c.start, Producer: "a"}}
+				if withErrors {
+					s = append(s, Sample{Metric: "reqs_total", Labels: lbls("job", "api", "code", "500"), Value: 5000, Time: at(m), Start: c.start, Producer: "a"})
+				}
+				e.Ingest(s)
+				events = append(events, e.Advance(at(m))...)
+			}
+			m := 1
+			for ; m <= 60; m++ { // both series exported; the 500 series is flat
+				step(m, true)
+			}
+			for ; m <= 180; m++ { // 500 not exported for 2h: evicted after 1h
+				step(m, false)
+			}
+			if e.Stats().SeriesEvicted == 0 {
+				t.Fatal("the 500 series was not evicted; the test does not exercise the bug")
+			}
+			before := e.Status()[0].Budget
+			events = nil
+			for ; m <= 240; m++ { // 500 comes back, still flat at 5000
+				step(m, true)
+			}
+			for _, ev := range events {
+				if ev.Kind == EventAlertFiring {
+					t.Fatalf("alert fired with no new errors: %+v", ev)
+				}
+			}
+			if after := e.Status()[0].Budget; after.Bad != before.Bad {
+				t.Fatalf("bad events in budget went from %v to %v with no new errors", before.Bad, after.Bad)
+			}
+			// After the baseline, new errors on the returning series count.
+			e.Ingest([]Sample{{Metric: "reqs_total", Labels: lbls("job", "api", "code", "500"), Value: 5007, Time: at(m), Start: c.start, Producer: "a"}})
+			e.Advance(at(m))
+			if got := window5m(t, e).Bad; got != 7 {
+				t.Fatalf("bad after return = %v, want 7", got)
+			}
+		})
+	}
+}
+
+// TestSilentProducerReturnsAsBaseline covers the producer-level variant: a
+// process whose stream started after the engine began observing goes silent
+// for longer than SeriesTTL (a network partition), so its producer state is
+// retired, then exports again with the same start time. Its series carry
+// lifetime counts and must re-establish baselines; a series it creates later
+// still counts in full; and a restart (new start time) is new data.
+func TestSilentProducerReturnsAsBaseline(t *testing.T) {
+	e := newEngine(t, Config{SeriesTTL: 10 * time.Minute}, workbookSLO)
+	e.Ingest([]Sample{{Metric: "reqs_total", Labels: lbls("job", "other"), Value: 1, Time: at(0), Start: at(-60), Producer: "other"}})
+	start := at(1) // after the engine's epoch: first values count in full
+	mk := func(m int, code string, v float64, start time.Time) Sample {
+		return Sample{Metric: "reqs_total", Labels: lbls("job", "api", "code", code), Value: v, Time: at(m), Start: start, Producer: "p"}
+	}
+	e.Ingest([]Sample{mk(2, "200", 100, start), mk(2, "500", 3, start)})
+	e.Advance(at(2))
+	if got := window5m(t, e).Bad; got != 3 {
+		t.Fatalf("bad = %v, want 3 (stream started after observation)", got)
+	}
+	// Silent for 40 minutes: series evicted, producer retired.
+	e.Advance(at(42))
+	pkey := "p\xff" + start.String()
+	if p := e.retired[pkey]; len(e.producers) != 0 || p == nil || len(p.evicted) != 2 {
+		t.Fatalf("producers %v, retired %+v: want the producer retired with 2 tombstones", e.producers, p)
+	}
+	// Back with the same start time and unchanged counts: nothing new. A
+	// 503 series created during the partition is new and counts in full.
+	e.Ingest([]Sample{mk(43, "200", 100, start), mk(43, "500", 3, start), mk(43, "503", 2, start)})
+	e.Advance(at(43))
+	if w := window5m(t, e); w.Bad != 2 || w.Total != 2 {
+		t.Fatalf("window %+v, want only the 2 new 503s", w)
+	}
+	if p := e.producers[pkey]; p == nil || len(p.evicted) != 0 || e.retired[pkey] != nil {
+		t.Fatal("producer not restored, or tombstones of returned series kept")
+	}
+	// Silent beyond the longest SLO window: the retired state is forgotten.
+	e.Advance(at(43).Add(31 * day))
+	if len(e.producers) != 0 || len(e.retired) != 0 {
+		t.Fatalf("producers %d, retired %d: want both empty", len(e.producers), len(e.retired))
+	}
+	// A restart (new start time) after the first export is new data.
+	restart := at(43).Add(31 * day)
+	e.Ingest([]Sample{{Metric: "reqs_total", Labels: lbls("job", "api", "code", "200"), Value: 10, Time: restart.Add(time.Minute), Start: restart, Producer: "p"}})
+	e.Ingest([]Sample{{Metric: "reqs_total", Labels: lbls("job", "api", "code", "500"), Value: 4, Time: restart.Add(2 * time.Minute), Start: restart, Producer: "p"}})
+	e.Advance(restart.Add(2 * time.Minute))
+	if got := window5m(t, e).Bad; got != 4 {
+		t.Fatalf("bad = %v, want 4", got)
+	}
+}

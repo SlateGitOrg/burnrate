@@ -93,10 +93,20 @@ type seriesState struct {
 	last     float64
 	lastTime int64
 	start    int64
+	pkey     string // producer key of the latest sample; "" when unknown
 }
 
+// producerState tracks one producer (resource + start time) of cumulative
+// streams. evicted holds a tombstone (metric + "\xff" + label key) for every
+// series of this producer dropped by SeriesTTL: if such a series is exported
+// again with the same start time, its value is the stream's lifetime count,
+// so it must re-establish a baseline instead of being taken for a newly
+// created series (or for a stream that started after we began observing).
+// A producer silent for SeriesTTL is retired with its tombstones, restored if
+// it exports again, and forgotten once silent for the longest SLO window.
 type producerState struct {
 	first, last int64 // unix ns
+	evicted     map[string]struct{}
 }
 
 type alertState struct {
@@ -125,6 +135,7 @@ type Engine struct {
 	slos      []*sloState
 	index     map[string][]*source
 	producers map[string]*producerState // keyed by producer + start time
+	retired   map[string]*producerState // producers silent for SeriesTTL, same key
 	epoch     int64                     // timestamp of the first sample ever ingested
 	watermark time.Time                 // newest sample time
 	lastEval  time.Time
@@ -142,6 +153,7 @@ func New(cfg Config, slos []*slo.SLO) (*Engine, error) {
 		cfg:       cfg,
 		index:     map[string][]*source{},
 		producers: map[string]*producerState{},
+		retired:   map[string]*producerState{},
 	}
 	for _, def := range slos {
 		st := &sloState{def: def, windows: def.Windows(), budgetState: slo.StateNoData}
@@ -223,14 +235,30 @@ func (e *Engine) ingestOne(s *Sample) {
 	if s.Time.After(e.watermark) {
 		e.watermark = s.Time
 	}
-	pkey := ""
-	if !s.Start.IsZero() && s.Temporality == Cumulative {
-		pkey = s.Producer + "\xff" + s.Start.String()
-		if p, ok := e.producers[pkey]; ok {
-			p.last = max(p.last, t)
-		} else {
-			e.producers[pkey] = &producerState{first: t, last: t}
+	key, pkey := "", ""
+	var prod *producerState
+	if s.Temporality == Cumulative {
+		key = s.Labels.Key()
+		if !s.Start.IsZero() {
+			pkey = s.Producer + "\xff" + s.Start.String()
+			prod = e.producers[pkey]
+			if prod == nil {
+				if prod = e.retired[pkey]; prod != nil {
+					delete(e.retired, pkey)
+				} else {
+					prod = &producerState{first: t, last: t}
+				}
+				e.producers[pkey] = prod
+			}
+			prod.last = max(prod.last, t)
 		}
+	}
+	// A series this producer exported before it was evicted is returning,
+	// not new: see producerState.
+	returning, tomb := false, ""
+	if prod != nil && len(prod.evicted) > 0 {
+		tomb = s.Metric + "\xff" + key
+		_, returning = prod.evicted[tomb]
 	}
 	matched := false
 	for _, src := range srcs {
@@ -238,7 +266,7 @@ func (e *Engine) ingestOne(s *Sample) {
 			continue
 		}
 		matched = true
-		delta, ok := e.delta(src, s, t, pkey)
+		delta, ok := e.delta(src, s, t, key, pkey, returning)
 		if !ok || delta == 0 {
 			continue
 		}
@@ -246,26 +274,30 @@ func (e *Engine) ingestOne(s *Sample) {
 			e.stats.SamplesTooOld++
 		}
 	}
+	if returning {
+		delete(prod.evicted, tomb)
+	}
 	if matched {
 		e.stats.SamplesMatched++
 	}
 }
 
 // delta converts a sample into the number of new events it represents for one
-// source. ok is false for duplicates and out-of-order samples.
-func (e *Engine) delta(src *source, s *Sample, t int64, pkey string) (float64, bool) {
+// source. key is the sample's label key and pkey its producer key; returning
+// marks a series its producer exported before it was evicted. ok is false for
+// duplicates and out-of-order samples.
+func (e *Engine) delta(src *source, s *Sample, t int64, key, pkey string, returning bool) (float64, bool) {
 	if s.Temporality == Delta {
 		return s.Value, true
 	}
-	key := s.Labels.Key()
 	start := int64(0)
 	if !s.Start.IsZero() {
 		start = s.Start.UnixNano()
 	}
 	st, ok := src.series[key]
 	if !ok {
-		src.series[key] = &seriesState{last: s.Value, lastTime: t, start: start}
-		if e.firstValueCounts(start, t, pkey) {
+		src.series[key] = &seriesState{last: s.Value, lastTime: t, start: start, pkey: pkey}
+		if !returning && e.firstValueCounts(start, t, pkey) {
 			return s.Value, true
 		}
 		return 0, true
@@ -289,7 +321,7 @@ func (e *Engine) delta(src *source, s *Sample, t int64, pkey string) (float64, b
 	}
 	st.last, st.lastTime = s.Value, t
 	if start != 0 {
-		st.start = start
+		st.start, st.pkey = start, pkey
 	}
 	return d, true
 }
@@ -304,7 +336,9 @@ func (e *Engine) delta(src *source, s *Sample, t int64, pkey string) (float64, b
 //     series on every export, so the series must have been created since.
 //
 // Otherwise the value may include events from before we started observing, so
-// it only establishes a baseline, as Prometheus' rate() would treat it.
+// it only establishes a baseline, as Prometheus' rate() would treat it. Neither
+// rule applies to a series returning after eviction (see producerState): the
+// caller checks that first.
 func (e *Engine) firstValueCounts(start, t int64, pkey string) bool {
 	if start == 0 {
 		return false
@@ -336,15 +370,25 @@ func (e *Engine) Stats() Stats {
 	return s
 }
 
-// evictStale drops series and producer state not updated within SeriesTTL.
+// evictStale drops series state not updated within SeriesTTL, leaving a
+// tombstone on the series' producer so that its return is not mistaken for a
+// new series. Producers not updated within SeriesTTL are retired, and retired
+// producers are forgotten once silent for the longest SLO window.
 func (e *Engine) evictStale(now time.Time) {
 	horizon := now.Add(-e.cfg.SeriesTTL).UnixNano()
 	for _, srcs := range e.index {
 		for _, src := range srcs {
 			for k, st := range src.series {
-				if st.lastTime < horizon {
-					delete(src.series, k)
-					e.stats.SeriesEvicted++
+				if st.lastTime >= horizon {
+					continue
+				}
+				delete(src.series, k)
+				e.stats.SeriesEvicted++
+				if p := e.producers[st.pkey]; p != nil {
+					if p.evicted == nil {
+						p.evicted = map[string]struct{}{}
+					}
+					p.evicted[src.sel.Metric+"\xff"+k] = struct{}{}
 				}
 			}
 		}
@@ -352,6 +396,13 @@ func (e *Engine) evictStale(now time.Time) {
 	for k, p := range e.producers {
 		if p.last < horizon {
 			delete(e.producers, k)
+			e.retired[k] = p
+		}
+	}
+	forget := now.Add(-e.maxWindow()).UnixNano()
+	for k, p := range e.retired {
+		if p.last < forget {
+			delete(e.retired, k)
 		}
 	}
 }
