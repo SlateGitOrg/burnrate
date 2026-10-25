@@ -209,6 +209,9 @@ decrease is a reset, and a series' first sample is only a baseline unless the
 stream provably started from zero (OTLP start time after the engine began
 observing, or the same producer already exported without that series). This
 matters most for error series, which SDKs create lazily on the first error.
+A series that returns after being evicted for inactivity, with the same
+producer and start time, is never treated as new: its first value back is a
+baseline, as `rate()` sees no increase across the gap in short windows.
 
 ## 8. Engine vs. generated rules
 

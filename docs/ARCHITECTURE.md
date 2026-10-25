@@ -96,8 +96,18 @@ time. A sample's contribution is:
   makes lazily created error series (an SDK creates the `500` series on the
   first error) count their first errors.
 
-Per-series state not updated for `--series-ttl` is evicted. Cost: `O(m)` per
-sample where `m` is the number of selectors on that metric name.
+Per-series state not updated for `--series-ttl` is evicted, leaving a
+tombstone on its producer. If the same producer (same start time) exports the
+series again, which OpenTelemetry asynchronous instruments do when a callback
+stops and later resumes observing an attribute set, the returning value is a
+lifetime count, so it is a baseline: neither first-sample exception applies.
+A producer silent for `--series-ttl` is retired with its tombstones and
+restored if it exports again (a partition, not a restart); it is forgotten
+once silent for the longest SLO window. Without this, a returning series'
+whole value lands in one bucket and pages with zero new errors, where `rate()`
+sees no increase. Tombstones cost one string per evicted series for the
+producer's lifetime plus that retention. Cost per sample: `O(m)` where `m` is
+the number of selectors on that metric name.
 
 ### Ring buffer (`internal/window/ring.go`)
 

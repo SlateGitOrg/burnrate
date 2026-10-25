@@ -267,6 +267,11 @@ The full list with trade-offs is in [DECISIONS.md](DECISIONS.md). The main ones:
 * **Latency thresholds must be bucket bounds.** Bounds are only known at
   runtime, so a threshold that is not one silently selects no good series and
   the SLI reads 100% errors (every alert fires — loud, but confusing).
+* **Gaps in a series are not back-filled.** A series that is not exported
+  for longer than `--series-ttl` and then returns with the same start time
+  re-establishes a baseline (it does not page on its lifetime count), so
+  errors that accrued while it was not exported are never counted; windows
+  in Prometheus that span the gap would count them.
 * **Single process.** No sharding or HA; per-series state is in one map per
   selector. Sized for a handful of services' SLOs, not a fleet.
 * **Equivalence tolerance.** Engine and Prometheus transitions are compared
