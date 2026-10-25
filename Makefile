@@ -51,7 +51,8 @@ promtool-check: ## promtool check rules + test rules on the example output (skip
 	@scripts/promtool-check.sh examples/prometheus
 
 bench: ## Benchmarks: end-to-end replay and window sums
-	$(GO) test -run '^$$' -bench . -benchtime 5x ./internal/sim/ ./internal/window/
+	$(GO) test -run '^$$' -bench . -benchtime 5x ./internal/sim/
+	$(GO) test -run '^$$' -bench . ./internal/window/
 
 demo: build ## Offline end-to-end demo against the bundled SLOs and scenarios
 	@scripts/demo.sh $(BIN)
