@@ -53,6 +53,6 @@ spec:
         minRemaining: 0.4
         action: Release at normal cadence.
       - name: at-risk
-        minRemaining: 0.1
+        minRemaining: 0
         action: Performance review required before each release.
     exhaustedAction: Freeze feature releases; latency fixes only.

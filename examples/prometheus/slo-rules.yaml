@@ -217,14 +217,14 @@ groups:
           state: healthy
           team: payments
       - record: slo:error_budget_policy_state
-        expr: 0 * (slo:error_budget_remaining:ratio{slo="checkout-latency"} >= 0.1 < 0.4) + 1
+        expr: 0 * (slo:error_budget_remaining:ratio{slo="checkout-latency"} > 0 < 0.4) + 1
         labels:
           service: checkout
           slo: checkout-latency
           state: at-risk
           team: payments
       - record: slo:error_budget_policy_state
-        expr: 0 * (slo:error_budget_remaining:ratio{slo="checkout-latency"} < 0.1) + 1
+        expr: 0 * (slo:error_budget_remaining:ratio{slo="checkout-latency"} <= 0) + 1
         labels:
           service: checkout
           slo: checkout-latency

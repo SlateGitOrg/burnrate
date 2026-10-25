@@ -155,15 +155,15 @@ func TestPolicyStateRules(t *testing.T) {
 	slos := exampleSLOs(t)
 	f, _ := Generate(slos, Options{})
 	var exprs []string
-	for _, r := range f.Groups[1].Rules { // checkout-latency: healthy>=0.4, at-risk>=0.1
+	for _, r := range f.Groups[1].Rules { // checkout-latency: healthy>=0.4, at-risk>0
 		if r.Record == RecordPolicyState {
 			exprs = append(exprs, r.Labels["state"]+": "+string(r.Expr))
 		}
 	}
 	want := []string{
 		`healthy: 0 * (slo:error_budget_remaining:ratio{slo="checkout-latency"} >= 0.4) + 1`,
-		`at-risk: 0 * (slo:error_budget_remaining:ratio{slo="checkout-latency"} >= 0.1 < 0.4) + 1`,
-		`exhausted: 0 * (slo:error_budget_remaining:ratio{slo="checkout-latency"} < 0.1) + 1`,
+		`at-risk: 0 * (slo:error_budget_remaining:ratio{slo="checkout-latency"} > 0 < 0.4) + 1`,
+		`exhausted: 0 * (slo:error_budget_remaining:ratio{slo="checkout-latency"} <= 0) + 1`,
 	}
 	if strings.Join(exprs, "\n") != strings.Join(want, "\n") {
 		t.Fatalf("policy rules\n%s", strings.Join(exprs, "\n"))
@@ -176,6 +176,15 @@ func TestPolicyStateRules(t *testing.T) {
 	}
 	if !strings.Contains(avail[2], `> 0 < 0.25`) || !strings.Contains(avail[3], `<= 0)`) {
 		t.Fatalf("default policy rules %v", avail)
+	}
+	// A policy whose lowest state still needs budget left: anything below
+	// it is exhausted.
+	cp := *slos[0]
+	cp.Policy = slo.Policy{States: []slo.PolicyState{{Name: "ok", MinRemaining: 0.5}, {Name: "low", MinRemaining: 0.1}}}
+	g, _ := Generate([]*slo.SLO{&cp}, Options{})
+	rs := g.Groups[0].Rules
+	if last := rs[len(rs)-1-len(cp.Alerting.Severities)]; !strings.Contains(string(last.Expr), "< 0.1)") || last.Labels["state"] != "exhausted" {
+		t.Fatalf("exhausted rule %+v", last)
 	}
 }
 
