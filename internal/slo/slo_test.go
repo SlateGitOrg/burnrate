@@ -61,10 +61,10 @@ func TestLoadExamples(t *testing.T) {
 	}
 
 	lat := byName["checkout-latency"]
-	if lat.Indicator.Kind != KindLatency || lat.Indicator.Threshold != 0.3 {
+	if lat.Indicator.Kind != KindLatency || lat.Indicator.Threshold != 0.25 {
 		t.Fatalf("latency %+v", lat.Indicator)
 	}
-	if got := lat.Indicator.Good.String(); got != `http_server_request_duration_seconds_bucket{job="checkout", http_response_status_code!~"5..", le="0.3"}` {
+	if got := lat.Indicator.Good.String(); got != `http_server_request_duration_seconds_bucket{job="checkout", http_response_status_code!~"5..", le="0.25"}` {
 		t.Fatalf("good selector %s", got)
 	}
 	if got := lat.Indicator.Total.String(); got != `http_server_request_duration_seconds_count{job="checkout", http_response_status_code!~"5.."}` {

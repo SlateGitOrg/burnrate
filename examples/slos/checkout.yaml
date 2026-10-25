@@ -31,12 +31,12 @@ apiVersion: burnrate/v1
 kind: SLO
 metadata:
   name: checkout-latency
-  displayName: Checkout latency under 300ms
+  displayName: Checkout latency under 250ms
   labels:
     team: payments
 spec:
   service: checkout
-  description: Share of successful checkout API requests served within 300 ms.
+  description: Share of successful checkout API requests served within 250 ms.
   budgetingMethod: Occurrences
   timeWindow:
     - duration: 30d
@@ -46,7 +46,7 @@ spec:
   indicator:
     latency:
       histogram: http_server_request_duration_seconds{job="checkout", http_response_status_code!~"5.."}
-      threshold: 0.3
+      threshold: 0.25
   budgetPolicy:
     states:
       - name: healthy
