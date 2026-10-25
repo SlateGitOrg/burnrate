@@ -65,7 +65,7 @@ formatters:
   settings:
     goimports:
       local-prefixes:
-        - github.com/archit2501/burnrate
+        - github.com/SlateGitOrg/burnrate
 
 issues:
   max-issues-per-linter: 0

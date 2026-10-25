@@ -10,10 +10,10 @@ import (
 	colmetricspb "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/archit2501/burnrate/internal/engine"
-	"github.com/archit2501/burnrate/internal/otlp"
-	"github.com/archit2501/burnrate/internal/sim"
-	"github.com/archit2501/burnrate/internal/slo"
+	"github.com/SlateGitOrg/burnrate/internal/engine"
+	"github.com/SlateGitOrg/burnrate/internal/otlp"
+	"github.com/SlateGitOrg/burnrate/internal/sim"
+	"github.com/SlateGitOrg/burnrate/internal/slo"
 )
 
 // TestScenariosEndToEnd replays every built-in scenario through the protobuf

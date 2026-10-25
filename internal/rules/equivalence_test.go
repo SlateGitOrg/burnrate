@@ -26,11 +26,11 @@ import (
 	"github.com/prometheus/prometheus/util/teststorage"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/archit2501/burnrate/internal/engine"
-	"github.com/archit2501/burnrate/internal/otlp"
-	brrules "github.com/archit2501/burnrate/internal/rules"
-	"github.com/archit2501/burnrate/internal/sim"
-	"github.com/archit2501/burnrate/internal/slo"
+	"github.com/SlateGitOrg/burnrate/internal/engine"
+	"github.com/SlateGitOrg/burnrate/internal/otlp"
+	brrules "github.com/SlateGitOrg/burnrate/internal/rules"
+	"github.com/SlateGitOrg/burnrate/internal/sim"
+	"github.com/SlateGitOrg/burnrate/internal/slo"
 )
 
 // transition is an alert firing or resolving, relative to the scenario start.

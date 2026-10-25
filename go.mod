@@ -1,4 +1,4 @@
-module github.com/archit2501/burnrate
+module github.com/SlateGitOrg/burnrate
 
 go 1.27.1
 

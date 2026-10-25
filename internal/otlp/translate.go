@@ -26,8 +26,8 @@ import (
 	commonpb "go.opentelemetry.io/proto/otlp/common/v1"
 	metricspb "go.opentelemetry.io/proto/otlp/metrics/v1"
 
-	"github.com/archit2501/burnrate/internal/engine"
-	"github.com/archit2501/burnrate/internal/series"
+	"github.com/SlateGitOrg/burnrate/internal/engine"
+	"github.com/SlateGitOrg/burnrate/internal/series"
 )
 
 // Options configures the translation.

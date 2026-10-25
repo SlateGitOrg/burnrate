@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/archit2501/burnrate/internal/series"
-	"github.com/archit2501/burnrate/internal/slo"
+	"github.com/SlateGitOrg/burnrate/internal/series"
+	"github.com/SlateGitOrg/burnrate/internal/slo"
 )
 
 func lbls(kv ...string) series.Labels {

@@ -14,7 +14,7 @@ import (
 	"github.com/prometheus/prometheus/model/rulefmt"
 	"github.com/prometheus/prometheus/promql/parser"
 
-	"github.com/archit2501/burnrate/internal/slo"
+	"github.com/SlateGitOrg/burnrate/internal/slo"
 )
 
 var update = flag.Bool("update", false, "rewrite golden files")

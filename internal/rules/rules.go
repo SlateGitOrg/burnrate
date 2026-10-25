@@ -27,7 +27,7 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
-	"github.com/archit2501/burnrate/internal/slo"
+	"github.com/SlateGitOrg/burnrate/internal/slo"
 )
 
 // Recording rule names.

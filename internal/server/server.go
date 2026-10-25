@@ -21,11 +21,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/archit2501/burnrate/internal/engine"
-	"github.com/archit2501/burnrate/internal/notify"
-	"github.com/archit2501/burnrate/internal/otlp"
-	"github.com/archit2501/burnrate/internal/report"
-	"github.com/archit2501/burnrate/internal/slo"
+	"github.com/SlateGitOrg/burnrate/internal/engine"
+	"github.com/SlateGitOrg/burnrate/internal/notify"
+	"github.com/SlateGitOrg/burnrate/internal/otlp"
+	"github.com/SlateGitOrg/burnrate/internal/report"
+	"github.com/SlateGitOrg/burnrate/internal/slo"
 )
 
 // Clock selects what drives evaluation.

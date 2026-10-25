@@ -17,10 +17,10 @@ import (
 	metricspb "go.opentelemetry.io/proto/otlp/metrics/v1"
 	resourcepb "go.opentelemetry.io/proto/otlp/resource/v1"
 
-	"github.com/archit2501/burnrate/internal/engine"
-	"github.com/archit2501/burnrate/internal/otlp"
-	"github.com/archit2501/burnrate/internal/sim"
-	"github.com/archit2501/burnrate/internal/slo"
+	"github.com/SlateGitOrg/burnrate/internal/engine"
+	"github.com/SlateGitOrg/burnrate/internal/otlp"
+	"github.com/SlateGitOrg/burnrate/internal/sim"
+	"github.com/SlateGitOrg/burnrate/internal/slo"
 )
 
 type recorder struct {

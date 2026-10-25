@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/archit2501/burnrate/internal/burnmath"
-	"github.com/archit2501/burnrate/internal/series"
+	"github.com/SlateGitOrg/burnrate/internal/burnmath"
+	"github.com/SlateGitOrg/burnrate/internal/series"
 )
 
 // IndicatorKind names the SLI type.

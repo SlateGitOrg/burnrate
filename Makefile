@@ -28,7 +28,7 @@ lint: ## golangci-lint, zero issues allowed
 	golangci-lint run ./...
 
 build: ## Build bin/burnrate
-	$(GO) build -trimpath -ldflags "-X github.com/archit2501/burnrate/internal/cli.Version=$$(git describe --always --dirty 2>/dev/null || echo dev)" -o $(BIN) ./cmd/burnrate
+	$(GO) build -trimpath -ldflags "-X github.com/SlateGitOrg/burnrate/internal/cli.Version=$$(git describe --always --dirty 2>/dev/null || echo dev)" -o $(BIN) ./cmd/burnrate
 
 test: ## Run all tests
 	$(GO) test ./...

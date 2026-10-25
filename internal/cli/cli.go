@@ -16,14 +16,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/archit2501/burnrate/internal/engine"
-	"github.com/archit2501/burnrate/internal/notify"
-	"github.com/archit2501/burnrate/internal/otlp"
-	"github.com/archit2501/burnrate/internal/report"
-	"github.com/archit2501/burnrate/internal/rules"
-	"github.com/archit2501/burnrate/internal/server"
-	"github.com/archit2501/burnrate/internal/sim"
-	"github.com/archit2501/burnrate/internal/slo"
+	"github.com/SlateGitOrg/burnrate/internal/engine"
+	"github.com/SlateGitOrg/burnrate/internal/notify"
+	"github.com/SlateGitOrg/burnrate/internal/otlp"
+	"github.com/SlateGitOrg/burnrate/internal/report"
+	"github.com/SlateGitOrg/burnrate/internal/rules"
+	"github.com/SlateGitOrg/burnrate/internal/server"
+	"github.com/SlateGitOrg/burnrate/internal/sim"
+	"github.com/SlateGitOrg/burnrate/internal/slo"
 )
 
 // Version is set at build time with -ldflags "-X .../cli.Version=...".

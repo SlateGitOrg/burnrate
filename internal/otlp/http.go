@@ -20,7 +20,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/archit2501/burnrate/internal/engine"
+	"github.com/SlateGitOrg/burnrate/internal/engine"
 )
 
 // Path is the OTLP/HTTP metrics path.

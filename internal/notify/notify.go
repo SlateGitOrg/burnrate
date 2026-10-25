@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/archit2501/burnrate/internal/engine"
+	"github.com/SlateGitOrg/burnrate/internal/engine"
 )
 
 // Notifier receives the events of one evaluation round together with the set

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/archit2501/burnrate/internal/engine"
-	"github.com/archit2501/burnrate/internal/slo"
+	"github.com/SlateGitOrg/burnrate/internal/engine"
+	"github.com/SlateGitOrg/burnrate/internal/slo"
 )
 
 func TestFormatters(t *testing.T) {

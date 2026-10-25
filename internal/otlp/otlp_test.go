@@ -22,7 +22,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/archit2501/burnrate/internal/engine"
+	"github.com/SlateGitOrg/burnrate/internal/engine"
 )
 
 var ts = time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)

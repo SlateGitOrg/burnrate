@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/archit2501/burnrate/internal/burnmath"
-	"github.com/archit2501/burnrate/internal/series"
-	"github.com/archit2501/burnrate/internal/slo"
+	"github.com/SlateGitOrg/burnrate/internal/burnmath"
+	"github.com/SlateGitOrg/burnrate/internal/series"
+	"github.com/SlateGitOrg/burnrate/internal/slo"
 )
 
 const day = 24 * time.Hour

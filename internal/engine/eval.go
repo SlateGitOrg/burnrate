@@ -4,9 +4,9 @@ import (
 	"math"
 	"time"
 
-	"github.com/archit2501/burnrate/internal/burnmath"
-	"github.com/archit2501/burnrate/internal/slo"
-	"github.com/archit2501/burnrate/internal/window"
+	"github.com/SlateGitOrg/burnrate/internal/burnmath"
+	"github.com/SlateGitOrg/burnrate/internal/slo"
+	"github.com/SlateGitOrg/burnrate/internal/window"
 )
 
 // Advance evaluates every SLO at each resolution boundary in (last, to] and

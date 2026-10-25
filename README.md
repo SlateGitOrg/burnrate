@@ -94,7 +94,7 @@ Package by package, with algorithms and complexity:
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The alert arithmetic:
 [docs/ALERT_MATH.md](docs/ALERT_MATH.md).
 
-## Quickstart
+## Quick start
 
 Requirements: Go 1.27+ (the module says `go 1.27.1`), and for `make check`
 golangci-lint v2 (CI pins v2.13.2). Nothing needs Docker or the network after
@@ -156,8 +156,7 @@ budgetConsumed}` (see [examples/slos/search.yaml](examples/slos/search.yaml)).
 prints the alert math, replays a four-day incident scenario in process,
 starts a real server on a loopback port, pushes the `outage` scenario through
 OTLP/HTTP with `loadgen`, reads back the status page, event log and
-`/metrics`, and generates the rules. Excerpts from a real run (full output in
-the build report):
+`/metrics`, and generates the rules. Excerpts from a real run:
 
 ```
 ==> 3. Replay the 4-day incident-day scenario in process (OTLP protobuf -> translator -> engine)
@@ -209,7 +208,7 @@ short window of the 3d/6h pair (+6h12m). The budget numbers are dramatic
 because only four days of traffic exist in the 30-day window; see
 [Limitations](#limitations).
 
-## Verification
+## Testing and verification
 
 Every number in this README comes from a command in the repo:
 
@@ -228,7 +227,7 @@ Every number in this README comes from a command in the repo:
 The test suite takes about a minute; most of it is the Prometheus equivalence
 test, which replays days of traffic through a real TSDB.
 
-## Design decisions
+## How it works
 
 The full list with trade-offs is in [DECISIONS.md](DECISIONS.md). The main ones:
 
@@ -277,9 +276,6 @@ The full list with trade-offs is in [DECISIONS.md](DECISIONS.md). The main ones:
 * **Equivalence tolerance.** Engine and Prometheus transitions are compared
   within ±2 minutes because `rate()` extrapolates; the engine's own timing is
   pinned to the minute by separate tests.
-* **CI is untested.** `.github/workflows/ci.yml` runs `make check`, the
-  promtool checks and the demo, but this repository has not been pushed, so
-  the workflow has never executed.
 * **Alertmanager integration** is covered by tests against a fake HTTP
   server, not a real Alertmanager.
 

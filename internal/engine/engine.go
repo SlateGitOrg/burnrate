@@ -20,9 +20,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/archit2501/burnrate/internal/series"
-	"github.com/archit2501/burnrate/internal/slo"
-	"github.com/archit2501/burnrate/internal/window"
+	"github.com/SlateGitOrg/burnrate/internal/series"
+	"github.com/SlateGitOrg/burnrate/internal/slo"
+	"github.com/SlateGitOrg/burnrate/internal/window"
 )
 
 // Config tunes the engine. The zero value is usable.

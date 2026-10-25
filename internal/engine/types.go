@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/archit2501/burnrate/internal/series"
-	"github.com/archit2501/burnrate/internal/slo"
+	"github.com/SlateGitOrg/burnrate/internal/series"
+	"github.com/SlateGitOrg/burnrate/internal/slo"
 )
 
 // Temporality is the OTLP aggregation temporality of a counter sample.

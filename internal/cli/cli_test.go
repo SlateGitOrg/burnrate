@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/archit2501/burnrate/internal/server"
-	"github.com/archit2501/burnrate/internal/slo"
+	"github.com/SlateGitOrg/burnrate/internal/server"
+	"github.com/SlateGitOrg/burnrate/internal/slo"
 )
 
 const slosDir = "../../examples/slos"

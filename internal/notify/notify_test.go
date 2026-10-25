@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/archit2501/burnrate/internal/engine"
+	"github.com/SlateGitOrg/burnrate/internal/engine"
 )
 
 var t0 = time.Date(2026, 4, 1, 10, 0, 0, 0, time.UTC)

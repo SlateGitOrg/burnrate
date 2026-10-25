@@ -7,7 +7,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/archit2501/burnrate/internal/cli"
+	"github.com/SlateGitOrg/burnrate/internal/cli"
 )
 
 func main() {
