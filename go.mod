@@ -2,7 +2,10 @@ module github.com/archit2501/burnrate
 
 go 1.27.1
 
-require github.com/prometheus/prometheus v0.314.0
+require (
+	github.com/prometheus/prometheus v0.314.0
+	go.yaml.in/yaml/v3 v3.0.5
+)
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
